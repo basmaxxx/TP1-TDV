@@ -1,5 +1,5 @@
 #include "Backtracking.h"
-
+#include <limits>
 void encontrarSeamBacktrackingRec(const std::vector<std::vector<double>>& energia, int i,int j,int n ,int m ,std::pair<std::vector<int>, double>&S ,std::pair<std::vector<int>, double>&B) {
     if(i==n){
         if(B.first.empty() || S.second < B.second){
@@ -13,7 +13,6 @@ void encontrarSeamBacktrackingRec(const std::vector<std::vector<double>>& energi
             S.second+=energia[i][j-1];
             encontrarSeamBacktrackingRec(energia, i + 1, j - 1, n, m, S, B);
             S.first.pop_back();
-
             S.second-=energia[i][j-1];
     }
     
@@ -40,7 +39,7 @@ std::vector<int> encontrarSeamBacktracking(const std::vector<std::vector<double>
     int n= energia.size();
     int m= energia[0].size();
     std::pair<std::vector<int>,double> B;
-    B.second=0.0;
+    B.second=std::numeric_limits<double>::infinity();
     for (int j = 0; j < m; j++) { //hago la funcion recursiva por cada elemento de la primera fila
         std::pair<std::vector<int>,double> S;
         S.first.push_back(j);
