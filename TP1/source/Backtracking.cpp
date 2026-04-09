@@ -48,5 +48,8 @@ std::vector<int> encontrarSeamBacktracking(const std::vector<std::vector<double>
         S.second = energia[0][j];
         encontrarSeamBacktrackingRec(energia, 1, j, n, m, S, B);
     }
+    for (int i = 0; i < B.first.size(); i++) {
+        B.first[i] += 1;
+    }
     return B.first;
 }
