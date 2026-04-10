@@ -1,55 +1,69 @@
 #include "FuerzaBruta.h"
 #include <limits>
+#include <vector>
 
+
+// calcula la energía total de un camino dado
 double calcular_energia(std::vector<int> &camino, const std::vector<std::vector<double>>& energia) {
     double total = 0;
     int n = energia.size();
-    for (int i = 0; i < n; i++) {
-        total += energia[i][camino[i]];
+
+    for (int i = 0; i < n; i++) {               // recorre cada fila de la imagen
+        total += energia[i][camino[i]];         // suma la energía del pixel elegido en esa fila
     }
+
     return total;
 }
+
+
+// función recursiva
 void encontrarSeamFuerzaBrutaRec(const std::vector<std::vector<double>>& energia, int i,int j,int n ,int m ,std::vector<int>&S ,std::vector<int>&B, double energiaActual, double& mejorEnergia) {
-    if(i==n){
-        if(B.empty() || energiaActual < mejorEnergia ){
+    if(i==n){               // caso base: es el final de la imagen 
+        if(B.empty() || energiaActual < mejorEnergia ){         // si encontró un camino mejor actualiza y guarda ese camino
             mejorEnergia = energiaActual;
             B = S;
         }
         return;
     }
 
-    if(j>0){ //bajamos por la izquierda siempre y cuando no estemos en un borde
+    if(j>0){                // baja por la rama izquierda siempre y cuando no esté en un borde
         S.push_back(j - 1);
         encontrarSeamFuerzaBrutaRec(energia, i + 1, j - 1, n, m, S, B, energiaActual + energia[i][j - 1], mejorEnergia);
         S.pop_back();
     }
     
-    //en todos los casos vamos a bajar por la rama del medio
-    S.push_back(j);
+    S.push_back(j);         // en todos los casos baja por la rama del medio
     encontrarSeamFuerzaBrutaRec(energia, i + 1, j, n, m, S, B, energiaActual + energia[i][j], mejorEnergia);
     S.pop_back();
-    if(j<m-1){ //bajamos por la rama derecha siempre y cuando no estemos en un borde
+
+    if(j<m-1){             // baja por la rama derecha siempre y cuando no esté en un borde
         S.push_back(j + 1);
         encontrarSeamFuerzaBrutaRec(energia, i + 1, j + 1, n, m, S, B, energiaActual + energia[i][j + 1], mejorEnergia);
         S.pop_back();
     }
 }
 
+
+// función principal
 std::vector<int> encontrarSeamFuerzaBruta(const std::vector<std::vector<double>>& energia) {
     if (energia.empty()) {
         return {};
     }
-    int n= energia.size();
-    int m= energia[0].size();
-    std::vector<int> B;
+
+    int n= energia.size();          // filas
+    int m= energia[0].size();       // columnas
+
+    std::vector<int> B;             // mejor camino encontrado
     double mejorEnergia = std::numeric_limits<double>::infinity();
-    for (int j = 0; j < m; j++) { //hago la funcion recursiva por cada elemento de la primera fila
+
+    for (int j = 0; j < m; j++) {   // comenzando desde cada columna posible en la primer fila
         std::vector<int> S;
         S.push_back(j);
         encontrarSeamFuerzaBrutaRec(energia, 1, j, n, m, S, B, energia[0][j], mejorEnergia);
     }
+
     for (int i = 0; i < B.size(); i++) {
-        B[i] += 1;
+        B[i] += 1;                  // pasa de base 0 a base 1 (formato de salida)
     }
     return B;
 }
