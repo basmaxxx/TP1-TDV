@@ -1,67 +1,103 @@
 #include "ProgramacionDinamica.h"
-#include <vector>
 #include <limits>
-#include <utility>
+#include <vector>
 
 
-// función recursiva
-std::pair<double, std::vector<int>> encontrarSeamPDRec(const std::vector<std::vector<double>>& energia, int i,int j, int n, int m, std::vector<std::vector<std::pair<double, std::vector<int>>>>& memo) {
-
-    if (j < 0 || j >= m) {          // columna inválida
-        return {std::numeric_limits<double>::infinity(), {}}; 
-    }
-
-    if (memo[i][j].first != -1) {             // si ya resolvió este subproblema reutiliza el resultado (memorización)
-        return memo[i][j]; 
-    }
-
-    if (i == n-1) {                             // si está en el final de la imagen el camino es el píxel ese
-        memo[i][j] = {energia[i][j], {j}}; 
+std::pair<std::vector<int>, double> encontrarSeamPDRec(const std::vector<std::vector<double>>& energia, int i, int j, int n, int m, std::vector<std::vector<std::pair<std::vector<int>, double>>>& memo) {
+    if(memo[i][j].second != std::numeric_limits<double>::infinity()){   //caso base: el memo no esta vacio
         return memo[i][j];
     }
-
-    auto izq = encontrarSeamPDRec(energia, i+1, j-1, n, m, memo);       // recursión por izquierda
-    auto med = encontrarSeamPDRec(energia, i+1, j, n, m, memo);         // recursión por centro
-    auto der = encontrarSeamPDRec(energia, i+1, j+1, n, m, memo);       // recursión por derecha
-
-    auto mejor = izq;                   // asume izquierda como mejor 
-    if (med.first < mejor.first) {      // comparo con el del centro
-        mejor = med;
+    if(i==0){                   //caso base estoy en la primera fila 
+        std::pair<std::vector<int>, double > res; 
+        res.first.push_back(j);
+        res.second= energia[i][j];
+        memo[i][j]= res;
+        return res;
     }
-    if (der.first < mejor.first) {      // comparo con el de la derechaderecha
-        mejor = der;
-    }
+    
+    //incrementamos la energia actual
 
-    std::vector<int> camino;
-    camino.push_back(j);                // agrega pixel actual
-    camino.insert(camino.end(), mejor.second.begin(), mejor.second.end());  // concatena el mejor camino para abajo
-    memo[i][j] = {energia[i][j] + mejor.first, camino}; 
-    return memo[i][j];
+
+
+    if(j > 0 && j < m-1){    //si no estoy en un borde 
+        std::pair<std::vector<int>, double > min;
+        min.first= {};
+        min.second= std::numeric_limits<double>::infinity();
+        for(int k=j-1; k <= j+1; k++){
+            std::pair<std::vector<int>, double> aux= encontrarSeamPDRec(energia, i-1, k, n , m, memo);
+            if(min.second>aux.second){
+                min=aux;
+                }
+        }
+        min.first.push_back(j);
+        min.second += energia[i][j];
+
+        memo[i][j]= min;
+        return memo[i][j];
+    }
+    else if(j==0){
+        std::pair<std::vector<int>, double> min;
+        min.first= {};
+        min.second= std::numeric_limits<double>::infinity();
+        for(int k=j; k <= j+1; k++){
+            std::pair<std::vector<int>, double> aux= encontrarSeamPDRec(energia, i-1, k, n , m, memo);
+            if(min.second>aux.second){
+                min=aux;
+                
+            }
+        }
+        min.first.push_back(j);
+        min.second += energia[i][j];
+        memo[i][j]= min;
+        return memo[i][j];
+    }
+    else{
+        std::pair<std::vector<int>, double> min;
+        min.first= {};
+        min.second= std::numeric_limits<double>::infinity();
+        for(int k=j-1; k <= j; k++){
+            std::pair<std::vector<int>, double> aux = encontrarSeamPDRec(energia, i-1, k, n , m, memo);
+            if(min.second>aux.second){
+                min=aux;
+            }
+        }
+        min.first.push_back(j);
+        min.second += energia[i][j];
+        memo[i][j]= min;
+        return memo[i][j];
+    }
+    //PENSAR QUE HACER QUE CASO PARA PONER EL ELSE
 }
 
 
-// función principal
 std::vector<int> encontrarSeamPD(const std::vector<std::vector<double>>& energia) {
-    if (energia.empty() || energia[0].empty()) { 
-        return {};
-    }
+    //creo la estructura de datos-->MEMO
+    int n= energia.size();
+    int m= energia[0].size();
+    std::vector<std::vector<std::pair<std::vector<int>, double>>> memo(
+    n,
+    std::vector<std::pair<std::vector<int>, double>>(
+        m,
+        { {}, std::numeric_limits<double>::infinity() }
+    )
+);
 
-    int n = energia.size();         // filas
-    int m = energia[0].size();      // columnas
-    std::vector<std::vector<std::pair<double, std::vector<int>>>> memo(n, std::vector<std::pair<double, std::vector<int>>>(m, {-1, {}}));     // tabla de memoización
-    double mejorEnergia = std::numeric_limits<double>::infinity();
-    std::vector<int> mejorCamino;
 
-    for (int j = 0; j < m; j++) {               // comenzando desde cada columna posible en la primer fila
-        std::pair<double, std::vector<int>> actual = encontrarSeamPDRec(energia, 0, j, n, m, memo); 
-        if (actual.first < mejorEnergia) {      // si encuentra un mejor camino
-            mejorEnergia = actual.first;
-            mejorCamino = actual.second;
+    for(int j = 0; j < m; j++){
+        encontrarSeamPDRec(energia, n-1, j, n, m, memo);
+    }   
+    
+    /*ahora busco el minimo-> luego del primer ciclo, todos los elementos de la ultima fila 
+      ya estan resueltos con los minimos caminos llenos de energia*/
+
+    //primer elemento de la ultima fila del memo(primer valor posible)
+    std::pair<std::vector<int>, double> min= memo[n-1][0];
+
+    //empiezo a comparar desde el primero
+    for(int i=1; i<m; i++){
+        if(min.second>memo[n-1][i].second){
+            min=memo[n-1][i];
         }
     }
-
-    for (int i = 0; i < mejorCamino.size(); i++) { 
-        mejorCamino[i] += 1;                    // pasa de base 0 a base 1 (formato de salida)
-    }
-    return mejorCamino;
+    return min.first;
 }
